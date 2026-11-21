@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>5 Days Survival: Wild Forest</title>
+    <style>
+        /* Reset & Gaya Dasar Modern */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: #f8fafc;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* HUD Utama di Atas Layar */
+        .top-hud {
+            width: 100%;
+            max-width: 720px;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            padding: 10px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 20;
+        }
+
+        .bars-group {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .stat-bar-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 112px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            color: #cbd5e1;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 10px;
+            background: #334155;
+            border-radius: 999px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.2s ease;
+        }
+
+        #hpBar { background: linear-gradient(90deg, #ef4444, #f87171); width: 100%; }
+        #hungerBar { background: linear-gradient(90deg, #f59e0b, #fbbf24); width: 100%; }
+
+        .day-badge {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+            transition: background 0.3s ease;
+        }
+
+        .day-badge.night {
+            background: linear-gradient(135deg, #581c87, #1e1b4b);
+            border: 1px solid rgba(216, 180, 254, 0.3);
+            box-shadow: 0 4px 15px rgba(88, 28, 135, 0.6);
+        }
+
+        .inventory-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .inv-item {
+            background: rgba(30, 41, 59, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Bingkai Kanvas Game */
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            aspect-ratio: 720 / 450;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+            background: #2d5a27;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            touch-action: none;
+            outline: none;
+        }
+
+        /* Notifikasi Mengambang di Dalam Game */
+        #toastMsg {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            color: #fef08a;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(250, 204, 21, 0.4);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+            z-index: 15;
+            white-space: nowrap;
+        }
+
+        /* Banner Ancaman Malam */
+        #nightBanner {
+            position: absolute;
+            top: 48px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            background: linear-gradient(90deg, rgba(127, 29, 29, 0.94), rgba(88, 28, 135, 0.94));
+            color: #fecaca;
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            border: 1px solid rgba(248, 113, 113, 0.55);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.65);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 15;
+            text-align: center;
+        }
+
+        #nightBanner.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        /* Layar Overlay (Start transparan memperlihatkan dunia hutan, Game Over, Victory) */
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 40;
+        }
+
+        .overlay-screen h1 {
+            font-size: clamp(24px, 5vw, 34px);
+            font-weight: 900;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #4ade80, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+        }
+
+        .overlay-screen p {
+            color: #f1f5f9;
+            max-width: 500px;
+            font-size: clamp(12px, 2.8vw, 14px);
+            line-height: 1.55;
+            margin-bottom: 18px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #15803d);
+            color: #ffffff;
+            border: 2px solid #86efac;
+            padding: 15px 30px;
+            font-size: clamp(14px, 3.2vw, 17px);
+            font-weight: 900;
+            letter-spacing: 0.6px;
+            border-radius: 14px;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            z-index: 50;
+            box-shadow: 0 6px 0 #14532d, 0 12px 28px rgba(22, 163, 74, 0.55);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.08);
+        }
+
+        .btn-primary:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #14532d;
+        }
+
+        /* Kontrol Sentuh & Virtual di Bawah Layar */
+        .bottom-controls {
+            width: 100%;
+            max-width: 720px;
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 50;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(2, 50px);
+            gap: 6px;
+            z-index: 50;
+        }
+
+        .ctrl-btn {
+            background: linear-gradient(180deg, #334155, #1e293b);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 18px;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #0f172a;
+            transition: transform 0.06s ease, background 0.1s ease;
+        }
+
+        .ctrl-btn.active,
+        .ctrl-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #0f172a;
+            background: #475569;
+            border-color: #38bdf8;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+            justify-content: flex-end;
+            z-index: 50;
+        }
+
+        .act-btn {
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 800;
+            font-size: 13px;
+            color: white;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.06s ease, filter 0.1s ease;
+        }
+
+        .btn-attack { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 4px 0 #1e3a8a; }
+        .btn-eat { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 0 #7f1d1d; }
+        .btn-house { background: linear-gradient(135deg, #d97706, #92400e); box-shadow: 0 4px 0 #451a03; }
+        .btn-fire { background: linear-gradient(135deg, #f97316, #c2410c); box-shadow: 0 4px 0 #7c2d12; }
+
+        .act-btn.active,
+        .act-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+            filter: brightness(1.15);
+        }
+
+        .key-hints {
+            width: 100%;
+            max-width: 720px;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HUD Atas -->
+    <div class="top-hud">
+        <div class="bars-group">
+            <div class="stat-bar-wrap">
+                <div class="stat-label"><span>❤️ NYAWA</span><span id="hpText">100/100</span></div>
+                <div class="bar-bg"><div class="bar-fill" id="hpBar"></div></div>
+            </div>
+            <div class="stat-bar-wrap">
+                <div class="stat-label"><span>🍖 LAPAR</span><span id="hungerText">100/100</span></div>
+                <div class="bar-bg"><div class="bar-fill" id="hungerBar"></div></div>
+            </div>
+        </div>
+
+        <div class="day-badge" id="dayBadge">
+            <span id="timeIcon">☀️</span>
+            <span id="dayText">HARI 1 / 5</span>
+        </div>
+
+        <div class="inventory-group">
+            <div class="inv-item" title="Kayu untuk Rumah & Api Unggun">🪵 <span id="woodCount">0</span></div>
+            <div class="inv-item" title="Berry di Tas (Petik dulu dari semak, lalu tekan E untuk Makan)">🍒 <span id="foodCount">0</span></div>
+        </div>
+    </div>
+
+    <!-- Area Game -->
+    <div class="game-wrapper">
+        <canvas id="gameCanvas" tabindex="0"></canvas>
+        <div id="toastMsg">Pesan</div>
+        <div id="nightBanner">⚠️ MALAM TIBA!</div>
+
+        <!-- Layar Mulai Transparan -->
+        <div class="overlay-screen" id="startScreen">
+            <h1>🌲 5 DAYS SURVIVAL</h1>
+            <p>
+                Bertahanlah selama <b>5 Hari</b> dari kelaparan dan 5 jenis pemangsa malam yang makin brutal!<br>
+                • <b>WASD / Panah / D-Pad / Klik Tanah</b> : Berjalan<br>
+                • <b>SPASI / Klik Objek / Tombol Aksi</b> : Tebang Kayu, Petik Berry, & Serang<br>
+                • <b>E</b> : Makan Berry &nbsp;|&nbsp; <b>B</b> : Rumah Kayu (5🪵) &nbsp;|&nbsp; <b>C</b> : Api Unggun (3🪵)
+            </p>
+            <button type="button" class="btn-primary" id="startBtn">KLIK DI SINI UNTUK MULAI BERMAIN</button>
+        </div>
+
+        <!-- Layar Akhir (Menang / Kalah) -->
+        <div class="overlay-screen" id="endScreen" style="display: none;">
+            <h1 id="endTitle">GAME OVER</h1>
+            <p id="endDesc">Kamu gugur di hutan liar.</p>
+            <button type="button" class="btn-primary" id="restartBtn">KLIK UNTUK MAIN LAGI</button>
+        </div>
+    </div>
+
+    <!-- Kontrol Sentuh & Virtual untuk Mouse / Layar Sentuh -->
+    <div class="bottom-controls">
+        <div class="dpad">
+            <div></div>
+            <button type="button" class="ctrl-btn" data-key="w" aria-label="Atas">▲</button>
+            <div></div>
+            <button type="button" class="ctrl-btn" data-key="a" aria-label="Kiri">◀</button>
+            <button type="button" class="ctrl-btn" data-key="s" aria-label="Bawah">▼</button>
+            <button type="button" class="ctrl-btn" data-key="d" aria-label="Kanan">▶</button>
+        </div>
+
+        <div class="action-buttons">
+            <button type="button" class="act-btn btn-attack" id="btnAttack">⚔️ Aksi (Spasi)</button>
+            <button type="button" class="act-btn btn-eat" id="btnEat">🍒 Makan (E)</button>
+            <button type="button" class="act-btn btn-house" id="btnHouse">🏠 Rumah (B)</button>
+            <button type="button" class="act-btn btn-fire" id="btnFire">🔥 Api Unggun (C)</button>
+        </div>
+    </div>
+
+    <div class="key-hints">
+        Tips: Bisa juga <b>klik langsung di tanah</b> untuk berjalan, atau <b>klik pohon / semak berry / hewan</b> untuk mendekat & berinteraksi otomatis!
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Ukuran logika dunia game (skala otomatis terhadap layar)
+        const WORLD_W = 720;
+        const WORLD_H = 450;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        // Status Utama Permainan
+        let gameState = "START"; // START, PLAYING, GAMEOVER, VICTORY
+        let loopStarted = false;
+        let lastTime = performance.now();
+
+        // Siklus 5 Hari (1 Hari = 36 detik: 20 detik Siang, 16 detik Malam)
+        const DAY_DURATION = 36;
+        const NIGHT_START = 20;
+        let dayTimer = 0;
+        let currentDay = 1;
+        let isNight = false;
+        let wasNight = false;
+
+        // Data Karakter Manusia
+        let player = {};
+        let keys = {};
+        let moveTarget = null; // Target klik langsung di atas kanvas { x, y, targetObj, targetType }
+
+        // Entitas Dunia
+        let trees = [];
+        let bushes = [];
+        let rocks = [];
+        let enemies = [];
+        let campfires = [];
+        let house = null;
+        let screenShake = 0;
+        let particles = [];
+        let floatingTexts = [];
+        let grassDetails = [];
+        let clickRipples = [];
+
+        // Konfigurasi Pemangsa Unik untuk Setiap Malam (Malam 1 s/d Malam 5)
+        const NIGHT_BEASTS = {
+            1: {
+                type: "wolf",
+                name: "Serigala Liar",
+                banner: "🐺 MALAM 1: Kawanan Serigala Liar mulai berburu!",
+                hp: 45,
+                speed: 1.55,
+                damage: 8,
+                radius: 15,
+                maxCount: 3,
+                spawnInterval: 5.5
+            },
+            2: {
+                type: "spider",
+                name: "Laba-laba Raksasa",
+                banner: "🕷️ MALAM 2: Laba-laba Raksasa Beracun muncul! Gigitannya memperlambat langkah!",
+                hp: 60,
+                speed: 2.05,
+                damage: 10,
+                radius: 16,
+                maxCount: 4,
+                spawnInterval: 4.8
+            },
+            3: {
+                type: "bear",
+                name: "Beruang Grizzly",
+                banner: "🐻 MALAM 3: Beruang Grizzly raksasa mengamuk! Darah tebal & cakar mematikan!",
+                hp: 130,
+                speed: 1.35,
+                damage: 18,
+                radius: 22,
+                maxCount: 3,
+                spawnInterval: 5.2
+            },
+            4: {
+                type: "panther",
+                name: "Macan Bayangan",
+                banner: "🐆 MALAM 4: Macan Bayangan mengintai! Sangat cepat di kegelapan!",
+                hp: 95,
+                speed: 2.45,
+                damage: 15,
+                radius: 17,
+                maxCount: 4,
+                spawnInterval: 4.3
+            },
+            5: {
+                type: "wendigo",
+                name: "Raja Wendigo Hutan",
+                banner: "👹 MALAM 5 (TERAKHIR): Raja Wendigo & Pasukan Malam menyerang habis-habisan!",
+                hp: 210,
+                speed: 1.85,
+                damage: 24,
+                radius: 25,
+                maxCount: 5,
+                spawnInterval: 3.8
+            }
+        };
+
+        // Toast & Banner Notifikasi
+        let toastTimeout = null;
+        function showToast(text) {
+            const toast = document.getElementById("toastMsg");
+            toast.innerText = text;
+            toast.style.opacity = "1";
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.style.opacity = "0";
+            }, 2400);
+        }
+
+        let bannerTimeout = null;
+        function showNightBanner(text) {
+            const banner = document.getElementById("nightBanner");
+            banner.innerText = text;
+            banner.classList.add("show");
+            clearTimeout(bannerTimeout);
+            bannerTimeout = setTimeout(() => {
+                banner.classList.remove("show");
+            }, 4200);
+        }
+
+        // Inisialisasi Dunia Game (juga dipanggil saat halaman pertama kali dibuka agar latar belakang terlihat hidup)
+        function initWorld(autoPlay = false) {
+            player = {
+                x: WORLD_W / 2,
+                y: WORLD_H / 2,
+                radius: 14,
+                speed: 3.2,
+                hp: 100,
+                maxHp: 100,
+                hunger: 100,
+                maxHunger: 100,
+                wood: 0,
+                food: 0,
+                facingAngle: 0,
+                walkCycle: 0,
+                attackTimer: 0,
+                hurtTimer: 0,
+                slowTimer: 0
+            };
+
+            dayTimer = 0;
+            currentDay = 1;
+            isNight = false;
+            wasNight = false;
+            moveTarget = null;
+            keys = {};
+
+            trees = [];
+            bushes = [];
+            rocks = [];
+            enemies = [];
+            campfires = [];
+            house = null;
+            screenShake = 0;
+            particles = [];
+            floatingTexts = [];
+            grassDetails = [];
+            clickRipples = [];
+
+            for (let i = 0; i < 65; i++) {
+                grassDetails.push({
+                    x: Math.random() * WORLD_W,
+                    y: Math.random() * WORLD_H,
+                    size: 2 + Math.random() * 3,
+                    color: Math.random() > 0.5 ? "#244b20" : "#3a7332"
+                });
+            }
+
+            for (let i = 0; i < 11; i++) {
+                const pos = getSafeSpawnPos(55);
+                trees.push({ x: pos.x, y: pos.y, hp: 3, maxHp: 3, shake: 0 });
+            }
+
+            for (let i = 0; i < 8; i++) {
+                const pos = getSafeSpawnPos(45);
+                bushes.push({ x: pos.x, y: pos.y, berries: 3, maxBerries: 3, regrowTimer: 0, shake: 0 });
+            }
+
+            for (let i = 0; i < 7; i++) {
+                const pos = getSafeSpawnPos(35);
+                rocks.push({ x: pos.x, y: pos.y, r: 8 + Math.random() * 6 });
+            }
+
+            updateHUD();
+            if (autoPlay) {
+                gameState = "PLAYING";
+                showToast("Hari 1 dimulai! Petik berry dulu lalu tekan E untuk makan.");
+            }
+        }
+
+        function getSafeSpawnPos(minDistFromCenter) {
+            let x, y, dist;
+            do {
+                x = 45 + Math.random() * (WORLD_W - 90);
+                y = 45 + Math.random() * (WORLD_H - 90);
+                dist = Math.hypot(x - WORLD_W / 2, y - WORLD_H / 2);
+            } while (dist < minDistFromCenter);
+            return { x, y };
+        }
+
+        // Fungsi Utama Memulai Game & Memberikan Fokus Penuh ke Kanvas
+        function startGameWithFocus() {
+            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("endScreen").style.display = "none";
+            initWorld(true);
+
+            // Beri fokus penuh ke window dan canvas agar tombol keyboard langsung aktif
+            window.focus();
+            canvas.focus();
+            lastTime = performance.now();
+        }
+
+        // Memunculkan Hewan Buas sesuai Malam ke-N
+        function spawnEnemy(dayNumber) {
+            const clampedDay = Math.min(5, Math.max(1, dayNumber));
+            const config = NIGHT_BEASTS[clampedDay];
+
+            let beastType = config.type;
+            if (clampedDay === 5 && Math.random() < 0.45) {
+                const minions = ["wolf", "spider", "bear", "panther"];
+                beastType = minions[Math.floor(Math.random() * minions.length)];
+            }
+
+            const finalStats = Object.values(NIGHT_BEASTS).find(b => b.type === beastType) || config;
+
+            let x, y;
+            const side = Math.floor(Math.random() * 4);
+            if (side === 0) { x = Math.random() * WORLD_W; y = -20; }
+            else if (side === 1) { x = WORLD_W + 20; y = Math.random() * WORLD_H; }
+            else if (side === 2) { x = Math.random() * WORLD_W; y = WORLD_H + 20; }
+            else { x = -20; y = Math.random() * WORLD_H; }
+
+            enemies.push({
+                x, y,
+                type: finalStats.type,
+                name: finalStats.name,
+                hp: finalStats.hp,
+                maxHp: finalStats.hp,
+                speed: finalStats.speed + (Math.random() * 0.25),
+                damage: finalStats.damage,
+                radius: finalStats.radius,
+                angle: 0,
+                walkCycle: Math.random() * 6,
+                attackCooldown: 0,
+                erraticPhase: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Efek Partikel & Teks Melayang
+        function spawnParticles(x, y, color, count = 8) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const spd = 1 + Math.random() * 3;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * spd,
+                    vy: Math.sin(angle) * spd,
+                    life: 25 + Math.random() * 15,
+                    color,
+                    size: 2.5 + Math.random() * 3
+                });
+            }
+        }
+
+        function spawnFloatingText(x, y, text, color = "#ffffff") {
+            floatingTexts.push({
+                x, y,
+                text,
+                color,
+                life: 45
+            });
+        }
+
+        // Aksi Menyerang / Menebang Pohon / Memetik Berry (SPASI)
+        function triggerAction() {
+            if (gameState !== "PLAYING") return;
+            player.attackTimer = 14;
+
+            const reach = 48;
+            const hitX = player.x + Math.cos(player.facingAngle) * 24;
+            const hitY = player.y + Math.sin(player.facingAngle) * 24;
+
+            let hitSomething = false;
+
+            // 1. Cek serangan ke Hewan Buas
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const en = enemies[i];
+                if (Math.hypot(en.x - hitX, en.y - hitY) < reach + en.radius ||
+                    Math.hypot(en.x - player.x, en.y - player.y) < reach + en.radius * 0.7) {
+                    const dmg = 26;
+                    en.hp -= dmg;
+                    hitSomething = true;
+                    const pushAngle = Math.atan2(en.y - player.y, en.x - player.x);
+                    en.x += Math.cos(pushAngle) * 22;
+                    en.y += Math.sin(pushAngle) * 22;
+                    spawnParticles(en.x, en.y, "#ef4444", 10);
+                    spawnFloatingText(en.x, en.y - 16, `-${dmg}`, "#fca5a5");
+
+                    if (en.hp <= 0) {
+                        spawnFloatingText(en.x, en.y - 26, `${en.name} Kalah!`, "#fde047");
+                        enemies.splice(i, 1);
+                    }
+                }
+            }
+
+            // 2. Cek menebang Pohon
+            if (!hitSomething) {
+                for (let i = trees.length - 1; i >= 0; i--) {
+                    const t = trees[i];
+                    if (Math.hypot(t.x - hitX, t.y - hitY) < reach + 16 ||
+                        Math.hypot(t.x - player.x, t.y - player.y) < reach + 12) {
+                        t.hp--;
+                        t.shake = 8;
+                        hitSomething = true;
+                        spawnParticles(t.x, t.y, "#854d0e", 7);
+
+                        if (t.hp <= 0) {
+                            const woodGain = 2 + Math.floor(Math.random() * 2);
+                            player.wood += woodGain;
+                            spawnFloatingText(t.x, t.y - 15, `+${woodGain} Kayu 🪵`, "#fde047");
+                            const newPos = getSafeSpawnPos(85);
+                            t.x = newPos.x;
+                            t.y = newPos.y;
+                            t.hp = t.maxHp;
+                        } else {
+                            spawnFloatingText(t.x, t.y - 15, "Tok!", "#d6d3d1");
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // 3. Cek memetik Semak Berry (Wajib dipetik dulu masuk ke tas)
+            if (!hitSomething) {
+                for (let b of bushes) {
+                    if (Math.hypot(b.x - hitX, b.y - hitY) < reach + 14 ||
+                        Math.hypot(b.x - player.x, b.y - player.y) < reach + 12) {
+                        b.shake = 7;
+                        hitSomething = true;
+                        if (b.berries > 0) {
+                            b.berries--;
+                            player.food += 1;
+                            spawnParticles(b.x, b.y, "#f43f5e", 8);
+                            spawnFloatingText(b.x, b.y - 14, "+1 Berry dipetik 🍒", "#fda4af");
+                            if (b.berries === 0) {
+                                b.regrowTimer = 14;
+                            }
+                        } else {
+                            spawnFloatingText(b.x, b.y - 14, "Buah habis, tunggu tumbuh!", "#cbd5e1");
+                        }
+                        break;
+                    }
+                }
+            }
+
+            updateHUD();
+        }
+
+        // Aksi Makan Persediaan Berry yang Sudah Dipetik (E)
+        function eatFood() {
+            if (gameState !== "PLAYING") return;
+            if (player.food <= 0) {
+                showToast("Tas kosong! Dekati semak lalu tekan SPASI/Aksi untuk memetik berry.");
+                return;
+            }
+            if (player.hunger >= 100 && player.hp >= 100) {
+                showToast("Perut sudah kenyang dan nyawa penuh!");
+                return;
+            }
+            player.food--;
+            player.hunger = Math.min(100, player.hunger + 30);
+            player.hp = Math.min(100, player.hp + 15);
+            spawnParticles(player.x, player.y, "#4ade80", 10);
+            spawnFloatingText(player.x, player.y - 18, "+30 Lapar | +15 HP", "#86efac");
+            updateHUD();
+        }
+
+        // Aksi Membuat Api Unggun (C)
+        function buildCampfire() {
+            if (gameState !== "PLAYING") return;
+            if (player.wood < 3) {
+                showToast(`Butuh 3 Kayu untuk Api Unggun! (Kayu: ${player.wood})`);
+                return;
+            }
+            player.wood -= 3;
+            const fireX = Math.max(30, Math.min(WORLD_W - 30, player.x + Math.cos(player.facingAngle) * 28));
+            const fireY = Math.max(30, Math.min(WORLD_H - 30, player.y + Math.sin(player.facingAngle) * 28));
+            campfires.push({
+                x: fireX,
+                y: fireY,
+                life: 35
+            });
+            spawnParticles(fireX, fireY, "#f97316", 14);
+            showToast("🔥 Api Unggun menyala! Melindungi dari gelap & memulihkan HP.");
+            updateHUD();
+        }
+
+        // Aksi Membangun atau Memperbaiki Rumah Kayu (B)
+        function buildOrRepairHouse() {
+            if (gameState !== "PLAYING") return;
+
+            if (!house) {
+                if (player.wood < 5) {
+                    showToast(`Butuh 5 Kayu untuk Rumah Kayu! (Kayu saat ini: ${player.wood})`);
+                    return;
+                }
+                player.wood -= 5;
+                const hx = Math.max(75, Math.min(WORLD_W - 75, player.x));
+                const hy = Math.max(75, Math.min(WORLD_H - 75, player.y));
+                house = {
+                    x: hx,
+                    y: hy,
+                    width: 88,
+                    height: 76,
+                    hp: 150,
+                    maxHp: 150,
+                    hitShake: 0
+                };
+                player.x = hx;
+                player.y = hy + 6;
+                spawnParticles(hx, hy, "#d97706", 22);
+                spawnFloatingText(hx, hy - 42, "🏠 Rumah Kayu Berdiri!", "#fde047");
+                showToast("🏠 Rumah Kayu dibangun! Berlindung di dalam saat malam tiba.");
+                updateHUD();
+                return;
+            }
+
+            if (house.hp >= house.maxHp) {
+                showToast("Kondisi Rumah Kayu sudah 100% kokoh!");
+                return;
+            }
+            if (player.wood < 2) {
+                showToast(`Butuh 2 Kayu untuk memperbaiki Rumah! (Kayu: ${player.wood})`);
+                return;
+            }
+            player.wood -= 2;
+            const healAmt = Math.min(house.maxHp - house.hp, 55);
+            house.hp += healAmt;
+            spawnParticles(house.x, house.y, "#4ade80", 14);
+            spawnFloatingText(house.x, house.y - 42, `+${healAmt} HP Rumah`, "#86efac");
+            showToast(`🔨 Rumah diperbaiki! Ketahanan: ${Math.ceil(house.hp)}/${house.maxHp}`);
+            updateHUD();
+        }
+
+        // Mengecek apakah pemain berada di dalam Rumah Kayu
+        function isPlayerInsideHouse() {
+            if (!house) return false;
+            return Math.abs(player.x - house.x) < house.width * 0.46 &&
+                   Math.abs(player.y - house.y) < house.height * 0.46;
+        }
+
+        // Pembaruan HUD HTML
+        function updateHUD() {
+            document.getElementById("hpBar").style.width = `${Math.max(0, player.hp)}%`;
+            document.getElementById("hungerBar").style.width = `${Math.max(0, player.hunger)}%`;
+            document.getElementById("hpText").innerText = `${Math.ceil(player.hp)}/100`;
+            document.getElementById("hungerText").innerText = `${Math.ceil(player.hunger)}/100`;
+            document.getElementById("woodCount").innerText = player.wood;
+            document.getElementById("foodCount").innerText = player.food;
+
+            const houseBtn = document.getElementById("btnHouse");
+            if (!house) {
+                houseBtn.innerText = "🏠 Rumah (5🪵 | B)";
+            } else {
+                houseBtn.innerText = `🔨 Perbaiki (2🪵 | ${Math.ceil(house.hp)}HP)`;
+            }
+
+            const badge = document.getElementById("dayBadge");
+            const timeIcon = document.getElementById("timeIcon");
+            const dayText = document.getElementById("dayText");
+            const clampedDay = Math.min(5, currentDay);
+
+            if (isNight) {
+                badge.classList.add("night");
+                timeIcon.innerText = "🌙";
+                const beastName = NIGHT_BEASTS[clampedDay].name;
+                dayText.innerText = `MALAM ${clampedDay}/5 (${beastName})`;
+            } else {
+                badge.classList.remove("night");
+                timeIcon.innerText = "☀️";
+                dayText.innerText = `SIANG ${clampedDay}/5`;
+            }
+        }
+
+        // Update Logika Utama Game
+        let enemySpawnTimer = 0;
+        function update(dt) {
+            if (gameState !== "PLAYING") return;
+
+            // 1. Progres Waktu & Pergantian Siang/Malam
+            dayTimer += dt;
+            if (dayTimer >= DAY_DURATION) {
+                dayTimer = 0;
+                currentDay++;
+                if (currentDay > 5) {
+                    gameState = "VICTORY";
+                    document.getElementById("endTitle").innerText = "🏆 SELAMAT! KAMU BERTAHAN!";
+                    document.getElementById("endDesc").innerText = "Luar biasa! Kamu berhasil melewati kelaparan, mempertahankan rumahmu, dan mengalahkan semua teror malam selama 5 hari penuh!";
+                    document.getElementById("endScreen").style.display = "flex";
+                    return;
+                }
+                showToast(`☀️ Pagi Hari ke-${currentDay} tiba! Siapkan kayu & berry sebelum malam.`);
+            }
+
+            isNight = dayTimer >= NIGHT_START;
+            if (isNight && !wasNight) {
+                const beastInfo = NIGHT_BEASTS[Math.min(5, currentDay)];
+                showNightBanner(beastInfo.banner);
+                spawnEnemy(currentDay);
+            }
+            wasNight = isNight;
+
+            // 2. Sistem Kelaparan & Pemulihan
+            player.hunger -= 2.1 * dt;
+            if (player.hunger <= 0) {
+                player.hunger = 0;
+                player.hp -= 4.5 * dt;
+            }
+
+            let nearFire = false;
+            for (let i = campfires.length - 1; i >= 0; i--) {
+                campfires[i].life -= dt;
+                if (Math.hypot(player.x - campfires[i].x, player.y - campfires[i].y) < 95) {
+                    nearFire = true;
+                }
+                if (campfires[i].life <= 0) {
+                    campfires.splice(i, 1);
+                }
+            }
+            if (nearFire && player.hp < 100 && player.hunger > 20) {
+                player.hp = Math.min(100, player.hp + 3 * dt);
+            }
+
+            const sheltered = isPlayerInsideHouse();
+            if (sheltered && player.hp < 100 && player.hunger > 15) {
+                player.hp = Math.min(100, player.hp + 3.5 * dt);
+            }
+
+            if (house && house.hitShake > 0) house.hitShake--;
+            if (screenShake > 0) screenShake--;
+
+            // 3. Gerakan Karakter Manusia (Keyboard / D-Pad / Klik Kanvas)
+            let dx = 0, dy = 0;
+            if (keys["w"] || keys["arrowup"]) dy -= 1;
+            if (keys["s"] || keys["arrowdown"]) dy += 1;
+            if (keys["a"] || keys["arrowleft"]) dx -= 1;
+            if (keys["d"] || keys["arrowright"]) dx += 1;
+
+            if (player.slowTimer > 0) player.slowTimer -= dt;
+            const currentSpeed = player.slowTimer > 0 ? player.speed * 0.55 : player.speed;
+
+            if (dx !== 0 || dy !== 0) {
+                // Input tombol manual membatalkan auto-walk dari klik kanvas
+                moveTarget = null;
+                const len = Math.hypot(dx, dy);
+                dx /= len;
+                dy /= len;
+                player.x += dx * currentSpeed;
+                player.y += dy * currentSpeed;
+                player.facingAngle = Math.atan2(dy, dx);
+                player.walkCycle += 0.25;
+            } else if (moveTarget) {
+                // Jika target adalah objek (pohon/semak/musuh), perbarui koordinatnya
+                if (moveTarget.targetObj) {
+                    if (moveTarget.targetType === "enemy" && !enemies.includes(moveTarget.targetObj)) {
+                        moveTarget = null;
+                    } else {
+                        moveTarget.x = moveTarget.targetObj.x;
+                        moveTarget.y = moveTarget.targetObj.y;
+                    }
+                }
+
+                if (moveTarget) {
+                    const distToTarget = Math.hypot(moveTarget.x - player.x, moveTarget.y - player.y);
+                    const stopDist = moveTarget.targetObj ? 34 : 6;
+
+                    if (distToTarget > stopDist) {
+                        const ang = Math.atan2(moveTarget.y - player.y, moveTarget.x - player.x);
+                        player.x += Math.cos(ang) * currentSpeed;
+                        player.y += Math.sin(ang) * currentSpeed;
+                        player.facingAngle = ang;
+                        player.walkCycle += 0.25;
+                    } else {
+                        if (moveTarget.targetObj) {
+                            player.facingAngle = Math.atan2(moveTarget.y - player.y, moveTarget.x - player.x);
+                            triggerAction();
+                        }
+                        moveTarget = null;
+                    }
+                }
+            }
+
+            player.x = Math.max(20, Math.min(WORLD_W - 20, player.x));
+            player.y = Math.max(20, Math.min(WORLD_H - 20, player.y));
+
+            if (player.attackTimer > 0) player.attackTimer--;
+            if (player.hurtTimer > 0) player.hurtTimer--;
+
+            // 4. Tumbuh Ulang Berry pada Semak
+            for (let b of bushes) {
+                if (b.shake > 0) b.shake--;
+                if (b.berries === 0 && b.regrowTimer > 0) {
+                    b.regrowTimer -= dt;
+                    if (b.regrowTimer <= 0) {
+                        b.berries = b.maxBerries;
+                    }
+                }
+            }
+            for (let t of trees) {
+                if (t.shake > 0) t.shake--;
+            }
+
+            // 5. Spawn & AI Pemangsa Malam
+            const activeNightConfig = NIGHT_BEASTS[Math.min(5, currentDay)];
+            enemySpawnTimer += dt;
+            const currentSpawnRate = isNight ? activeNightConfig.spawnInterval : 13;
+            const currentMaxEnemies = isNight ? activeNightConfig.maxCount : 1;
+
+            if (enemySpawnTimer >= currentSpawnRate && enemies.length < currentMaxEnemies) {
+                enemySpawnTimer = 0;
+                spawnEnemy(currentDay);
+            }
+
+            for (let en of enemies) {
+                if (en.attackCooldown > 0) en.attackCooldown -= dt;
+
+                let repelled = false;
+                for (let cf of campfires) {
+                    const distFire = Math.hypot(en.x - cf.x, en.y - cf.y);
+                    if (distFire < 75) {
+                        const awayAngle = Math.atan2(en.y - cf.y, en.x - cf.x);
+                        en.x += Math.cos(awayAngle) * en.speed * 1.4;
+                        en.y += Math.sin(awayAngle) * en.speed * 1.4;
+                        en.angle = awayAngle;
+                        repelled = true;
+                    }
+                }
+
+                if (!repelled) {
+                    const attackHouse = house && (sheltered || Math.hypot(en.x - house.x, en.y - house.y) < 130);
+                    const targetX = attackHouse ? house.x : player.x;
+                    const targetY = attackHouse ? house.y : player.y;
+
+                    let angleToTarget = Math.atan2(targetY - en.y, targetX - en.x);
+                    if (en.type === "spider") {
+                        en.erraticPhase += 0.14;
+                        angleToTarget += Math.sin(en.erraticPhase) * 0.45;
+                    }
+                    en.angle = angleToTarget;
+                    const moveSpeed = isNight ? en.speed * 1.15 : en.speed * 0.85;
+                    en.x += Math.cos(angleToTarget) * moveSpeed;
+                    en.y += Math.sin(angleToTarget) * moveSpeed;
+                    en.walkCycle += 0.28;
+
+                    if (attackHouse && house) {
+                        const hitRangeX = house.width * 0.5 + en.radius * 0.75;
+                        const hitRangeY = house.height * 0.5 + en.radius * 0.75;
+                        if (Math.abs(en.x - house.x) < hitRangeX && Math.abs(en.y - house.y) < hitRangeY) {
+                            const pushOut = Math.atan2(en.y - house.y, en.x - house.x);
+                            en.x += Math.cos(pushOut) * 2.2;
+                            en.y += Math.sin(pushOut) * 2.2;
+
+                            if (en.attackCooldown <= 0) {
+                                const siegeDmg = Math.ceil(en.damage * 0.85);
+                                house.hp -= siegeDmg;
+                                house.hitShake = 8;
+                                screenShake = Math.max(screenShake, 4);
+                                en.attackCooldown = 0.9;
+
+                                spawnParticles(en.x, en.y, "#d97706", 7);
+                                spawnFloatingText(house.x + (Math.random() - 0.5) * 30, house.y - 36, `-${siegeDmg} Rumah`, "#fbbf24");
+
+                                if (house.hp <= 0) {
+                                    spawnParticles(house.x, house.y, "#92400e", 32);
+                                    spawnParticles(house.x, house.y, "#f59e0b", 18);
+                                    spawnFloatingText(house.x, house.y - 20, "💥 RUMAH RUNTUH!", "#ef4444");
+                                    showNightBanner("💥 RUMAH KAYU RUNTUH DISERANG HEWAN BUAS! SEGERA LARI!");
+                                    screenShake = 18;
+                                    house = null;
+                                }
+                            }
+                        }
+                    } else if (!sheltered) {
+                        if (Math.hypot(en.x - player.x, en.y - player.y) < player.radius + en.radius) {
+                            if (en.attackCooldown <= 0) {
+                                player.hp -= en.damage;
+                                player.hurtTimer = 8;
+                                en.attackCooldown = 0.95;
+                                spawnParticles(player.x, player.y, "#ef4444", 7);
+                                spawnFloatingText(player.x, player.y - 16, `-${en.damage} HP`, "#ef4444");
+
+                                if (en.type === "spider") {
+                                    player.slowTimer = 2.2;
+                                    showToast("🕷️ Terkena jaring racun laba-laba! Gerakan melambat!");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 6. Update Partikel, Teks Melayang, & Riak Klik Kanvas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y -= 0.7;
+                ft.life--;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            for (let i = clickRipples.length - 1; i >= 0; i--) {
+                const cr = clickRipples[i];
+                cr.radius += 0.9;
+                cr.alpha -= 0.045;
+                if (cr.alpha <= 0) clickRipples.splice(i, 1);
+            }
+
+            // 7. Cek Kekalahan
+            if (player.hp <= 0) {
+                player.hp = 0;
+                gameState = "GAMEOVER";
+                document.getElementById("endTitle").innerText = "💀 KAMU GUGUR";
+                document.getElementById("endDesc").innerText = `Kamu hanya mampu bertahan hingga Hari ke-${currentDay}. Kumpulkan berry, bangun rumah kayu, dan nyalakan api unggun sebelum malam tiba!`;
+                document.getElementById("endScreen").style.display = "flex";
+            }
+
+            updateHUD();
+        }
+
+        // ==========================================
+        // RENDER GRAFIK KARAKTER, RUMAH & DUNIA 2D
+        // ==========================================
+
+        function drawHumanCharacter(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+            ctx.beginPath();
+            ctx.ellipse(0, 12, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (p.slowTimer > 0) {
+                ctx.strokeStyle = "rgba(163, 230, 53, 0.65)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 4, 16, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.rotate(p.facingAngle);
+
+            const legSwing = Math.sin(p.walkCycle) * 5;
+            ctx.fillStyle = "#1e3a8a";
+            ctx.beginPath();
+            ctx.roundRect(-4 + legSwing, 4, 8, 6, 3);
+            ctx.roundRect(-4 - legSwing, -10, 8, 6, 3);
+            ctx.fill();
+
+            ctx.fillStyle = "#78350f";
+            ctx.beginPath();
+            ctx.roundRect(-12, -8, 7, 16, 3);
+            ctx.fill();
+
+            ctx.fillStyle = p.hurtTimer > 0 ? "#ef4444" : "#38bdf8";
+            ctx.beginPath();
+            ctx.roundRect(-7, -10, 14, 20, 6);
+            ctx.fill();
+
+            const swingOffset = p.attackTimer > 0 ? (14 - p.attackTimer) * 0.18 : 0;
+            ctx.save();
+            ctx.rotate(-0.4 + swingOffset);
+
+            ctx.strokeStyle = "#a16207";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(2, 8);
+            ctx.lineTo(28, 8);
+            ctx.stroke();
+
+            ctx.fillStyle = "#e2e8f0";
+            ctx.beginPath();
+            ctx.moveTo(28, 5);
+            ctx.lineTo(36, 8);
+            ctx.lineTo(28, 11);
+            ctx.closePath();
+            ctx.fill();
+
+            if (p.attackTimer > 6) {
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(10, 0, 26, -0.6, 0.8);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            ctx.fillStyle = "#fde047";
+            ctx.beginPath();
+            ctx.arc(2, 0, 8.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#451a03";
+            ctx.beginPath();
+            ctx.arc(0, 0, 8.5, Math.PI * 0.55, Math.PI * 1.45);
+            ctx.fill();
+
+            ctx.fillStyle = "#0f172a";
+            ctx.beginPath();
+            ctx.arc(6, -3, 1.5, 0, Math.PI * 2);
+            ctx.arc(6, 3, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawTree(t) {
+            const shakeX = t.shake > 0 ? (Math.random() - 0.5) * 5 : 0;
+            ctx.save();
+            ctx.translate(t.x + shakeX, t.y);
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.beginPath();
+            ctx.ellipse(0, 18, 22, 9, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#5c2d16";
+            ctx.fillRect(-6, 0, 12, 20);
+
+            ctx.fillStyle = "#14532d";
+            ctx.beginPath();
+            ctx.arc(0, -10, 24, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#166534";
+            ctx.beginPath();
+            ctx.arc(-6, -15, 18, 0, Math.PI * 2);
+            ctx.arc(8, -12, 16, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#22c55e";
+            ctx.beginPath();
+            ctx.arc(-3, -20, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawBush(b) {
+            const shakeX = b.shake > 0 ? (Math.random() - 0.5) * 4 : 0;
+            ctx.save();
+            ctx.translate(b.x + shakeX, b.y);
+
+            ctx.fillStyle = "rgba(0,0,0,0.25)";
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 16, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#15803d";
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.arc(-9, 3, 10, 0, Math.PI * 2);
+            ctx.arc(9, 3, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (b.berries > 0) {
+                ctx.fillStyle = "#f43f5e";
+                const berryOffsets = [[-5, -4], [6, -2], [0, 5]];
+                for (let i = 0; i < b.berries; i++) {
+                    const [bx, by] = berryOffsets[i];
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 3.8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawEnemy(en) {
+            ctx.save();
+            ctx.translate(en.x, en.y);
+
+            ctx.fillStyle = "rgba(0,0,0,0.35)";
+            ctx.beginPath();
+            ctx.ellipse(0, en.radius * 0.7, en.radius * 0.9, en.radius * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.rotate(en.angle);
+            const legMove = Math.sin(en.walkCycle) * 4;
+
+            if (en.type === "spider") {
+                ctx.strokeStyle = "#1e1b4b";
+                ctx.lineWidth = 2.5;
+                for (let s = -1; s <= 1; s += 2) {
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(i * 8 + legMove * 0.5, s * 16);
+                        ctx.lineTo(i * 12, s * 22);
+                        ctx.stroke();
+                    }
+                }
+                ctx.fillStyle = "#312e81";
+                ctx.beginPath();
+                ctx.arc(-6, 0, 10, 0, Math.PI * 2);
+                ctx.arc(6, 0, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#a3e635";
+                ctx.beginPath();
+                ctx.arc(10, -3, 2.2, 0, Math.PI * 2);
+                ctx.arc(10, 3, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (en.type === "bear") {
+                ctx.fillStyle = "#451a03";
+                ctx.beginPath();
+                ctx.ellipse(-2, 0, 20, 14, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(15, 0, 10, 0, Math.PI * 2);
+                ctx.arc(13, -9, 4, 0, Math.PI * 2);
+                ctx.arc(13, 9, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#ef4444";
+                ctx.beginPath();
+                ctx.arc(20, -4, 2.2, 0, Math.PI * 2);
+                ctx.arc(20, 4, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (en.type === "panther") {
+                ctx.strokeStyle = "#09090b";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(-14, 0);
+                ctx.quadraticCurveTo(-24, legMove, -28, -4);
+                ctx.stroke();
+                ctx.fillStyle = "#18181b";
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 17, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(14, 0, 7.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#c084fc";
+                ctx.beginPath();
+                ctx.arc(18, -3, 2.2, 0, Math.PI * 2);
+                ctx.arc(18, 3, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (en.type === "wendigo") {
+                ctx.fillStyle = "#4c0519";
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 22, 16, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#e2e8f0";
+                ctx.beginPath();
+                ctx.arc(12, 0, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#fef08a";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(10, -8); ctx.lineTo(4, -22); ctx.lineTo(14, -26);
+                ctx.moveTo(10, 8); ctx.lineTo(4, 22); ctx.lineTo(14, 26);
+                ctx.stroke();
+                ctx.fillStyle = "#ef4444";
+                ctx.beginPath();
+                ctx.arc(17, -4, 2.8, 0, Math.PI * 2);
+                ctx.arc(17, 4, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else {
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-12, 0);
+                ctx.lineTo(-22, legMove * 0.6);
+                ctx.stroke();
+                ctx.fillStyle = "#334155";
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 15, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#1e293b";
+                ctx.beginPath();
+                ctx.arc(12, 0, 7.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(10, -7); ctx.lineTo(15, -3); ctx.lineTo(9, -2);
+                ctx.moveTo(10, 7); ctx.lineTo(15, 3); ctx.lineTo(9, 2);
+                ctx.fill();
+                ctx.fillStyle = "#facc15";
+                ctx.beginPath();
+                ctx.arc(16, -3, 2, 0, Math.PI * 2);
+                ctx.arc(16, 3, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            if (en.hp < en.maxHp) {
+                const barW = en.radius * 2;
+                ctx.fillStyle = "rgba(0,0,0,0.65)";
+                ctx.fillRect(-barW / 2, -en.radius - 10, barW, 4);
+                ctx.fillStyle = "#ef4444";
+                ctx.fillRect(-barW / 2, -en.radius - 10, barW * (en.hp / en.maxHp), 4);
+            }
+
+            ctx.restore();
+        }
+
+        function drawCampfire(cf) {
+            ctx.save();
+            ctx.translate(cf.x, cf.y);
+
+            ctx.strokeStyle = "#78350f";
+            ctx.lineWidth = 5;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(-12, -6); ctx.lineTo(12, 6);
+            ctx.moveTo(12, -6); ctx.lineTo(-12, 6);
+            ctx.stroke();
+
+            const flicker = Math.sin(performance.now() * 0.02) * 3;
+            ctx.fillStyle = "#f97316";
+            ctx.beginPath();
+            ctx.arc(0, -2, 10 + flicker * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath();
+            ctx.arc(0, 0, 6 - flicker * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawHouse(h) {
+            const shakeX = h.hitShake > 0 ? (Math.random() - 0.5) * 6 : 0;
+            const shakeY = h.hitShake > 0 ? (Math.random() - 0.5) * 4 : 0;
+            const inside = isPlayerInsideHouse();
+
+            ctx.save();
+            ctx.translate(h.x + shakeX, h.y + shakeY);
+
+            const hw = h.width / 2;
+            const hh = h.height / 2;
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+            ctx.beginPath();
+            ctx.roundRect(-hw - 4, -hh + 6, h.width + 8, h.height + 4, 10);
+            ctx.fill();
+
+            ctx.fillStyle = "#5c2d16";
+            ctx.beginPath();
+            ctx.roundRect(-hw, -hh, h.width, h.height, 8);
+            ctx.fill();
+
+            if (inside) {
+                ctx.fillStyle = "#b45309";
+                ctx.beginPath();
+                ctx.roundRect(-hw + 6, -hh + 6, h.width - 12, h.height - 12, 5);
+                ctx.fill();
+
+                ctx.strokeStyle = "#92400e";
+                ctx.lineWidth = 2;
+                for (let ly = -hh + 16; ly < hh - 8; ly += 11) {
+                    ctx.beginPath();
+                    ctx.moveTo(-hw + 7, ly);
+                    ctx.lineTo(hw - 7, ly);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = "#dc2626";
+                ctx.beginPath();
+                ctx.roundRect(-16, -12, 32, 24, 4);
+                ctx.fill();
+
+                ctx.fillStyle = "#fbbf24";
+                ctx.fillRect(-11, hh - 7, 22, 8);
+            } else {
+                ctx.fillStyle = "#92400e";
+                ctx.beginPath();
+                ctx.roundRect(-hw + 3, -hh + 3, h.width - 6, h.height - 6, 6);
+                ctx.fill();
+
+                ctx.strokeStyle = "#78350f";
+                ctx.lineWidth = 2;
+                for (let ry = -hh + 12; ry < hh - 6; ry += 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(-hw + 5, ry);
+                    ctx.lineTo(hw - 5, ry);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = "#451a03";
+                ctx.fillRect(-hw + 2, -3, h.width - 4, 6);
+
+                ctx.fillStyle = isNight ? "#fef08a" : "#bae6fd";
+                ctx.fillRect(-hw + 12, 10, 14, 12);
+                ctx.strokeStyle = "#451a03";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-hw + 12, 10, 14, 12);
+
+                ctx.fillStyle = "#451a03";
+                ctx.fillRect(-10, hh - 16, 20, 16);
+                ctx.fillStyle = "#facc15";
+                ctx.beginPath();
+                ctx.arc(6, hh - 8, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const barW = 68;
+            const hpRatio = Math.max(0, h.hp / h.maxHp);
+            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.beginPath();
+            ctx.roundRect(-barW / 2 - 1, -hh - 15, barW + 2, 8, 4);
+            ctx.fill();
+
+            ctx.fillStyle = hpRatio > 0.5 ? "#22c55e" : (hpRatio > 0.25 ? "#f59e0b" : "#ef4444");
+            ctx.beginPath();
+            ctx.roundRect(-barW / 2, -hh - 14, barW * hpRatio, 6, 3);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.scale(canvas.width / WORLD_W, canvas.height / WORLD_H);
+
+            if (screenShake > 0) {
+                const sx = (Math.random() - 0.5) * screenShake * 0.9;
+                const sy = (Math.random() - 0.5) * screenShake * 0.9;
+                ctx.translate(sx, sy);
+            }
+
+            // 1. Latar Padang Rumput Estetik
+            ctx.fillStyle = "#2d5a27";
+            ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+            for (let g of grassDetails) {
+                ctx.fillStyle = g.color;
+                ctx.fillRect(g.x, g.y, g.size, g.size + 2);
+            }
+
+            // Penanda Target Klik di atas Tanah
+            if (moveTarget) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(250, 204, 21, 0.75)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(moveTarget.x, moveTarget.y, 10 + Math.sin(performance.now() * 0.01) * 2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            for (let cr of clickRipples) {
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${cr.alpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cr.x, cr.y, cr.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 2. Batu Hiasan
+            for (let r of rocks) {
+                ctx.fillStyle = "#64748b";
+                ctx.beginPath();
+                ctx.ellipse(r.x, r.y, r.r, r.r * 0.7, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 3. Api Unggun
+            for (let cf of campfires) drawCampfire(cf);
+
+            if (house && isPlayerInsideHouse()) {
+                drawHouse(house);
+            }
+
+            // 4. Urutkan Entitas berdasarkan posisi Y (Depth Sorting 2.5D)
+            const renderList = [
+                ...trees.map(t => ({ type: "tree", y: t.y, obj: t })),
+                ...bushes.map(b => ({ type: "bush", y: b.y, obj: b })),
+                ...enemies.map(en => ({ type: "enemy", y: en.y, obj: en })),
+                { type: "player", y: player.y, obj: player }
+            ];
+            if (house && !isPlayerInsideHouse()) {
+                renderList.push({ type: "house", y: house.y, obj: house });
+            }
+            renderList.sort((a, b) => a.y - b.y);
+
+            for (let item of renderList) {
+                if (item.type === "tree") drawTree(item.obj);
+                else if (item.type === "bush") drawBush(item.obj);
+                else if (item.type === "enemy") drawEnemy(item.obj);
+                else if (item.type === "player") drawHumanCharacter(item.obj);
+                else if (item.type === "house") drawHouse(item.obj);
+            }
+
+            // 5. Partikel
+            for (let p of particles) {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.life / 40);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // 6. Kegelapan Malam & Cahaya Hangat
+            if (isNight) {
+                ctx.save();
+                ctx.fillStyle = "rgba(9, 13, 28, 0.76)";
+                ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+                ctx.globalCompositeOperation = "destination-out";
+
+                const pGrad = ctx.createRadialGradient(player.x, player.y, 25, player.x, player.y, 120);
+                pGrad.addColorStop(0, "rgba(0,0,0,1)");
+                pGrad.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.fillStyle = pGrad;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, 120, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let cf of campfires) {
+                    const fGrad = ctx.createRadialGradient(cf.x, cf.y, 20, cf.x, cf.y, 175);
+                    fGrad.addColorStop(0, "rgba(0,0,0,1)");
+                    fGrad.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = fGrad;
+                    ctx.beginPath();
+                    ctx.arc(cf.x, cf.y, 175, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                if (house) {
+                    const hGrad = ctx.createRadialGradient(house.x, house.y, 35, house.x, house.y, 165);
+                    hGrad.addColorStop(0, "rgba(0,0,0,1)");
+                    hGrad.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = hGrad;
+                    ctx.beginPath();
+                    ctx.arc(house.x, house.y, 165, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            // 7. Teks Mengambang
+            for (let ft of floatingTexts) {
+                ctx.fillStyle = ft.color;
+                ctx.font = "bold 13px sans-serif";
+                ctx.textAlign = "center";
+                ctx.globalAlpha = Math.min(1, ft.life / 20);
+                ctx.fillText(ft.text, ft.x, ft.y);
+            }
+            ctx.globalAlpha = 1;
+
+            ctx.restore();
+        }
+
+        // Loop Animasi Utama
+        function gameLoop(now) {
+            const dt = Math.min(0.1, (now - lastTime) / 1000);
+            lastTime = now;
+
+            update(dt);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==========================================
+        // EVENT LISTENERS (KEYBOARD, MOUSE & TOUCH)
+        // ==========================================
+
+        window.addEventListener("keydown", (e) => {
+            const k = e.key.toLowerCase();
+            if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) {
+                e.preventDefault();
+            }
+            keys[k] = true;
+
+            if (gameState !== "PLAYING") return;
+            if (k === " ") triggerAction();
+            if (k === "e") eatFood();
+            if (k === "b") buildOrRepairHouse();
+            if (k === "c") buildCampfire();
+        });
+
+        window.addEventListener("keyup", (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Hentikan tombol virtual yang tertahan jika pengguna berpindah tab/jendela
+        window.addEventListener("blur", () => {
+            keys = {};
+            document.querySelectorAll(".ctrl-btn").forEach(b => b.classList.remove("active"));
+        });
+
+        // Kontrol Klik / Tap Langsung di Atas Kanvas (Berjalan & Interaksi Otomatis)
+        canvas.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            canvas.focus();
+            if (gameState !== "PLAYING") return;
+
+            const rect = canvas.getBoundingClientRect();
+            const worldX = ((e.clientX - rect.left) / rect.width) * WORLD_W;
+            const worldY = ((e.clientY - rect.top) / rect.height) * WORLD_H;
+
+            clickRipples.push({ x: worldX, y: worldY, radius: 4, alpha: 0.9 });
+
+            // Cek apakah pengguna mengklik Hewan Buas, Pohon, atau Semak Berry
+            let clickedObj = null;
+            let clickedType = null;
+
+            for (let en of enemies) {
+                if (Math.hypot(en.x - worldX, en.y - worldY) <= en.radius + 18) {
+                    clickedObj = en;
+                    clickedType = "enemy";
+                    break;
+                }
+            }
+            if (!clickedObj) {
+                for (let t of trees) {
+                    if (Math.hypot(t.x - worldX, t.y - worldY) <= 30) {
+                        clickedObj = t;
+                        clickedType = "tree";
+                        break;
+                    }
+                }
+            }
+            if (!clickedObj) {
+                for (let b of bushes) {
+                    if (Math.hypot(b.x - worldX, b.y - worldY) <= 24) {
+                        clickedObj = b;
+                        clickedType = "bush";
+                        break;
+                    }
+                }
+            }
+
+            if (clickedObj) {
+                // Jika sudah cukup dekat dengan objek, langsung beraksi tanpa harus menunggu jalan
+                if (Math.hypot(clickedObj.x - player.x, clickedObj.y - player.y) <= 44) {
+                    player.facingAngle = Math.atan2(clickedObj.y - player.y, clickedObj.x - player.x);
+                    triggerAction();
+                    moveTarget = null;
+                } else {
+                    moveTarget = {
+                        x: clickedObj.x,
+                        y: clickedObj.y,
+                        targetObj: clickedObj,
+                        targetType: clickedType
+                    };
+                }
+            } else {
+                moveTarget = {
+                    x: Math.max(20, Math.min(WORLD_W - 20, worldX)),
+                    y: Math.max(20, Math.min(WORLD_H - 20, worldY)),
+                    targetObj: null,
+                    targetType: null
+                };
+            }
+        });
+
+        // Kontrol D-Pad Virtual (PointerDown & PointerUp untuk Tahan Terus-Menerus)
+        document.querySelectorAll(".ctrl-btn").forEach(btn => {
+            const k = btn.getAttribute("data-key");
+
+            const pressKey = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                keys[k] = true;
+                btn.classList.add("active");
+                canvas.focus();
+            };
+
+            const releaseKey = (e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                keys[k] = false;
+                btn.classList.remove("active");
+            };
+
+            btn.addEventListener("pointerdown", (e) => {
+                if (btn.setPointerCapture) {
+                    try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+                }
+                pressKey(e);
+            });
+            btn.addEventListener("pointerup", releaseKey);
+            btn.addEventListener("pointercancel", releaseKey);
+            btn.addEventListener("lostpointercapture", releaseKey);
+        });
+
+        // Helper Tombol Aksi Sekali Tekan (Responsif di PointerDown & Click tanpa Double-Trigger)
+        function bindActionButton(elementId, callback) {
+            const btn = document.getElementById(elementId);
+            let lastTrigger = 0;
+
+            const run = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const now = performance.now();
+                if (now - lastTrigger < 120) return;
+                lastTrigger = now;
+
+                btn.classList.add("active");
+                setTimeout(() => btn.classList.remove("active"), 110);
+                canvas.focus();
+                callback();
+            };
+
+            btn.addEventListener("pointerdown", run);
+            btn.addEventListener("click", run);
+        }
+
+        bindActionButton("btnAttack", triggerAction);
+        bindActionButton("btnEat", eatFood);
+        bindActionButton("btnHouse", buildOrRepairHouse);
+        bindActionButton("btnFire", buildCampfire);
+
+        // Tombol Mulai & Main Lagi
+        bindActionButton("startBtn", startGameWithFocus);
+        bindActionButton("restartBtn", startGameWithFocus);
+
+        // Render awal dunia di balik layar start & mulai game loop
+        window.onload = function () {
+            resizeCanvas();
+            initWorld(false);
+            if (!loopStarted) {
+                loopStarted = true;
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            }
+        };
+    </script>
+</body>
+</html>
